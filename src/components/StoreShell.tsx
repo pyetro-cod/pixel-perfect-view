@@ -4,13 +4,16 @@ import { useState, type ReactNode } from "react";
 import { useStore } from "@/lib/store";
 import { WHATSAPP_URL, formatBRL } from "@/data/catalog";
 import CartDrawer from "@/components/CartDrawer";
+import logoMark from "@/assets/cariri-mark.png.asset.json";
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2">
-      <span className="grid size-8 shrink-0 place-items-center rounded-md bg-primary">
-        <span className="font-display text-lg leading-none text-primary-foreground">C</span>
-      </span>
+    <Link to="/" className="flex items-center gap-2.5">
+      <img
+        src={logoMark.url}
+        alt="Símbolo Cariri Suplementos"
+        className="size-9 shrink-0 rounded-md object-cover"
+      />
       <span className="font-display text-xl tracking-wide text-foreground">
         CARIRI<span className="text-primary">.</span>
       </span>

@@ -23,7 +23,7 @@ export type Product = {
   category: CategorySlug;
   flavor?: string;
   price: number;
-  oldPrice?: number;
+  oldPrice?: number | undefined;
   image: string;
   stock: number;
   description: string;
