@@ -156,5 +156,5 @@ export const stockStatus = (stock: number) =>
       ? { label: "Últimas unidades", tone: "low" as const }
       : { label: "Em estoque", tone: "ok" as const };
 
-export const discountPct = (p: { price: number; oldPrice?: number }) =>
+export const discountPct = (p: { price: number; oldPrice?: number | undefined }) =>
   p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
