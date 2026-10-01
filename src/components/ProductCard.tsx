@@ -1,76 +1,69 @@
-import { Link } from "@tanstack/react-router";
-import { toast } from "sonner";
-import { formatBRL, type Product } from "@/data/catalog";
-import { discountPct, stockStatus, useStore } from "@/lib/store";
+import { Package, ShoppingCart } from "lucide-react";
+import type { Product } from "@/data/products";
+import { getProductImage } from "@/lib/product-images";
 
-const toneClass = {
-  ok: "text-[oklch(0.78_0.16_155)]",
-  low: "text-[oklch(0.81_0.15_80)]",
-  out: "text-muted-foreground",
-};
+const brl = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
-export default function ProductCard({ product }: { product: Product }) {
-  const { addToCart, setCartOpen } = useStore();
-  const status = stockStatus(product.stock);
-  const off = discountPct(product);
+interface Props {
+  product: Product;
+  onAdd: (product: Product) => void;
+}
+
+export function ProductCard({ product, onAdd }: Props) {
+  const image = getProductImage(product.id);
+  const details = [product.flavor, product.weight, product.presentation, product.color]
+    .filter(Boolean)
+    .join(" • ");
 
   return (
-    <article className="group flex flex-col rounded-xl bg-card p-3 ring-1 ring-border transition-transform hover:-translate-y-1">
-      <Link to="/produto/$id" params={{ id: product.id }} className="relative block">
-        <img
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          width={768}
-          height={768}
-          className="aspect-square w-full rounded-lg bg-secondary object-cover"
-        />
-        {off > 0 && (
-          <span className="absolute left-2 top-2 rounded-md bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">
-            -{off}%
-          </span>
+    <article className="flex flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm transition hover:shadow-md">
+      <div className="relative aspect-[3/4] w-full overflow-hidden bg-neutral-900">
+        {image ? (
+          <img
+            src={image}
+            alt={`${product.name}${product.flavor ? ` - ${product.flavor}` : ""}`}
+            loading="lazy"
+            className="h-full w-full object-cover object-[50%_70%]"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center text-neutral-600">
+            <Package className="h-16 w-16" aria-hidden />
+          </div>
         )}
-      </Link>
-      <div className="mt-3 flex flex-1 flex-col">
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate text-xs font-semibold uppercase tracking-wide text-primary">
-            {product.brand}
+        {product.tags?.map((tag, i) => (
+          <span
+            key={tag}
+            style={{ top: `${0.75 + i * 1.75}rem` }}
+            className="absolute left-3 rounded-full bg-emerald-600 px-2 py-0.5 text-xs font-medium text-white"
+          >
+            {tag}
           </span>
-          {product.flavor && (
-            <span className="shrink-0 text-[11px] text-muted-foreground">{product.flavor}</span>
-          )}
-        </div>
-        <Link to="/produto/$id" params={{ id: product.id }}>
-          <h3 className="mt-1 text-sm font-semibold leading-snug text-foreground">{product.name}</h3>
-        </Link>
-        <div className="mt-3 flex items-end gap-2">
-          {product.oldPrice && (
-            <span className="text-xs text-muted-foreground line-through">
-              {formatBRL(product.oldPrice)}
-            </span>
-          )}
-          <span className="font-display text-2xl leading-none text-foreground">
-            {formatBRL(product.price)}
-          </span>
-        </div>
-        <span className={`mt-2 text-[11px] font-medium ${toneClass[status.tone]}`}>
-          ● {status.label}
+        ))}
+      </div>
+
+      <div className="flex flex-1 flex-col gap-2 p-4">
+        <span className="w-fit rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700">
+          {product.category}
         </span>
-        <button
-          disabled={product.stock === 0}
-          onClick={() => {
-            addToCart(product.id);
-            setCartOpen(true);
-            toast.success("Produto adicionado ao carrinho", { description: product.name });
-          }}
-          className={`mt-3 w-full rounded-md py-2.5 text-sm font-semibold transition-colors ${
-            product.stock === 0
-              ? "cursor-not-allowed bg-secondary text-muted-foreground"
-              : "bg-primary text-primary-foreground hover:bg-primary/90"
-          }`}
-        >
-          {product.stock === 0 ? "Indisponível" : "Adicionar"}
-        </button>
+        <p className="text-xs uppercase tracking-wide text-neutral-500">{product.brand}</p>
+        <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-neutral-900">
+          {product.name}
+        </h3>
+        {details && <p className="text-xs text-neutral-500">{details}</p>}
+
+        <div className="mt-auto flex flex-col gap-3 pt-2">
+          <p className="text-lg font-bold text-neutral-900">
+            {product.price !== null ? brl.format(product.price) : "Consulte o preço"}
+          </p>
+          <button
+            type="button"
+            onClick={() => onAdd(product)}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+          >
+            <ShoppingCart className="h-4 w-4" aria-hidden />
+            Adicionar ao Carrinho
+          </button>
+        </div>
       </div>
     </article>
   );
