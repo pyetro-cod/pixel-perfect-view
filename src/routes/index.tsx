@@ -76,7 +76,7 @@ function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-14">
+      {deals.length > 0 && <section className="mx-auto max-w-6xl px-4 pb-14">
         <div className="flex items-end justify-between">
           <h2 className="font-display text-3xl uppercase text-foreground">Ofertas</h2>
           <Link to="/catalogo" search={{ promo: true }} className="text-sm text-primary">Ver todas</Link>
@@ -84,10 +84,10 @@ function Home() {
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           {deals.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>
-      </section>
+      </section>}
 
       <section className="mx-auto max-w-6xl px-4 pb-20">
-        <h2 className="font-display text-3xl uppercase text-foreground">Mais vendidos</h2>
+        <h2 className="font-display text-3xl uppercase text-foreground">Destaques</h2>
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           {featured.map((p) => <ProductCard key={p.id} product={p} />)}
         </div>

@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -32,18 +33,63 @@ type StoreValue = {
   removeFromCart: (id: string) => void;
   clearCart: () => void;
   updateProduct: (id: string, patch: Partial<Product>) => void;
+  addProduct: (product: Omit<Product, "id" | "sold" | "createdAt">) => string;
   removeProduct: (id: string) => void;
+  resetCatalog: () => void;
   addOrder: (order: Omit<Order, "id" | "createdAt" | "status">) => string;
   setOrderStatus: (id: string, status: OrderStatus) => void;
 };
 
 const StoreContext = createContext<StoreValue | null>(null);
 
+// As edições do painel ficam salvas só neste navegador (não há backend).
+const STORAGE_KEY = "cariri-catalog-v1";
+
+type SavedCatalog = { products: Product[]; removed: string[] };
+
+function loadCatalog(): SavedCatalog | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? (JSON.parse(raw) as SavedCatalog) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Produtos novos do código entram na lista; os já editados e os removidos pelo painel são preservados.
+function mergeWithSeed(saved: SavedCatalog): Product[] {
+  const savedIds = new Set(saved.products.map((p) => p.id));
+  const removed = new Set(saved.removed);
+  const fresh = seedProducts.filter((p) => !savedIds.has(p.id) && !removed.has(p.id));
+  return [...saved.products, ...fresh];
+}
+
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>(seedProducts);
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [cartOpen, setCartOpen] = useState(false);
+  const [removed, setRemoved] = useState<string[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  // Carrega depois da montagem para o HTML do servidor e do cliente continuarem iguais.
+  useEffect(() => {
+    const saved = loadCatalog();
+    if (saved) {
+      setProducts(mergeWithSeed(saved));
+      setRemoved(saved.removed);
+    }
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ products, removed }));
+    } catch {
+      /* armazenamento indisponível: segue só em memória */
+    }
+  }, [products, removed, hydrated]);
 
   const addToCart = useCallback((id: string, qty = 1) => {
     setCart((prev) => {
@@ -69,8 +115,23 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   }, []);
 
+  const addProduct = useCallback((product: Omit<Product, "id" | "sold" | "createdAt">) => {
+    const id = `n${Date.now().toString(36)}`;
+    setProducts((prev) => [
+      { ...product, id, sold: 0, createdAt: new Date().toISOString().slice(0, 10) },
+      ...prev,
+    ]);
+    return id;
+  }, []);
+
   const removeProduct = useCallback((id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
+    setRemoved((prev) => (prev.includes(id) ? prev : [...prev, id]));
+  }, []);
+
+  const resetCatalog = useCallback(() => {
+    setProducts(seedProducts);
+    setRemoved([]);
   }, []);
 
   const addOrder = useCallback((order: Omit<Order, "id" | "createdAt" | "status">) => {
@@ -121,7 +182,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       removeFromCart,
       clearCart,
       updateProduct,
+      addProduct,
       removeProduct,
+      resetCatalog,
       addOrder,
       setOrderStatus,
     };
@@ -135,7 +198,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     removeFromCart,
     clearCart,
     updateProduct,
+    addProduct,
     removeProduct,
+    resetCatalog,
     addOrder,
     setOrderStatus,
   ]);

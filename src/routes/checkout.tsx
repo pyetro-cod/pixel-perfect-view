@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import StoreShell from "@/components/StoreShell";
-import { WHATSAPP_URL, formatBRL } from "@/data/catalog";
+import { WHATSAPP_URL, formatBRL, priceLabel } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/checkout")({
@@ -101,7 +101,7 @@ function Checkout() {
               <li key={l.product.id} className="flex gap-3 text-sm">
                 <img src={l.product.image} alt="" className="size-12 rounded-md object-cover" />
                 <span className="flex-1 text-foreground">{l.qty}× {l.product.name}</span>
-                <span className="text-foreground">{formatBRL(l.product.price * l.qty)}</span>
+                <span className="text-foreground">{l.product.price > 0 ? formatBRL(l.product.price * l.qty) : priceLabel(l.product)}</span>
               </li>
             ))}
           </ul>

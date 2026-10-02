@@ -3,7 +3,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import StoreShell from "@/components/StoreShell";
 import ProductCard from "@/components/ProductCard";
-import { categoryName, formatBRL, products as seed } from "@/data/catalog";
+import { categoryName, formatBRL, priceLabel, products as seed } from "@/data/catalog";
 import { discountPct, stockStatus, useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/produto/$id")({
@@ -58,11 +58,12 @@ function ProductPage() {
             <span className="text-sm font-semibold uppercase tracking-wide text-primary">{p.brand}</span>
             <h1 className="mt-2 font-display text-4xl uppercase leading-tight text-foreground">{p.name}</h1>
             {p.flavor && <p className="mt-1 text-muted-foreground">Sabor: {p.flavor}</p>}
+            {p.details && <p className="text-sm text-muted-foreground">{p.details}</p>}
             <div className="mt-6 flex items-end gap-3">
               {p.oldPrice && <span className="text-muted-foreground line-through">{formatBRL(p.oldPrice)}</span>}
-              <span className="font-display text-5xl text-foreground">{formatBRL(p.price)}</span>
+              <span className="font-display text-5xl text-foreground">{priceLabel(p)}</span>
             </div>
-            <p className="mt-2 text-sm text-muted-foreground">ou 3x de {formatBRL(p.price / 3)} sem juros</p>
+            {p.price > 0 && <p className="mt-2 text-sm text-muted-foreground">ou 3x de {formatBRL(p.price / 3)} sem juros</p>}
             <p className="mt-4 text-sm font-medium text-foreground">● {status.label} {p.stock > 0 && `(${p.stock} un.)`}</p>
             <div className="mt-6 flex gap-3">
               <div className="flex items-center rounded-md ring-1 ring-border">

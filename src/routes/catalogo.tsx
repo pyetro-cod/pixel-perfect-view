@@ -63,7 +63,7 @@ function Catalog() {
             onChange={(e) => set({ sort: e.target.value })}
             className="rounded-md border border-border bg-card px-3 py-2.5 text-sm text-foreground"
           >
-            <option value="relevancia">Mais vendidos</option>
+            <option value="relevancia">Destaques</option>
             <option value="menor">Menor preço</option>
             <option value="maior">Maior preço</option>
             <option value="novos">Novidades</option>

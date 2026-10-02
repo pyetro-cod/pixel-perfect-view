@@ -1,4 +1,4 @@
-// Requer Vite 5+ (query/import no glob)
+// Mapeia id do produto -> URL da foto em src/assets/products (ex.: "01" -> 01.jpeg)
 const modules = import.meta.glob<string>("../assets/products/*.{jpg,jpeg,png,webp,avif}", {
   eager: true,
   query: "?url",

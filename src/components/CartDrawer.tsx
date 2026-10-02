@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Minus, Plus, Trash2, X } from "lucide-react";
-import { formatBRL } from "@/data/catalog";
+import { formatBRL, priceLabel } from "@/data/catalog";
 import { useStore } from "@/lib/store";
 
 export default function CartDrawer() {
@@ -68,7 +68,7 @@ export default function CartDrawer() {
                     </button>
                   </div>
                   <span className="text-sm font-semibold text-foreground">
-                    {formatBRL(product.price * qty)}
+                    {product.price > 0 ? formatBRL(product.price * qty) : priceLabel(product)}
                   </span>
                   <button
                     aria-label="Remover"

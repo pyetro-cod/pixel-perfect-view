@@ -1,8 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { categoryName, formatBRL, orderStatuses, salesByMonth, type OrderStatus } from "@/data/catalog";
-import { discountPct, useStore } from "@/lib/store";
+import { formatBRL, orderStatuses, salesByMonth, type OrderStatus } from "@/data/catalog";
+import { useStore } from "@/lib/store";
+import AdminGate from "@/components/admin/AdminGate";
+import ProductsTab from "@/components/admin/ProductsTab";
+import StockTab from "@/components/admin/StockTab";
+import PromosTab from "@/components/admin/PromosTab";
+import { LOW_STOCK, box } from "@/components/admin/shared";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -14,11 +19,19 @@ export const Route = createFileRoute("/admin")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: Admin,
+  component: AdminPage,
 });
 
 const tabs = ["Visão geral", "Produtos", "Estoque", "Promoções", "Pedidos"] as const;
 type Tab = (typeof tabs)[number];
+
+function AdminPage() {
+  return (
+    <AdminGate>
+      <Admin />
+    </AdminGate>
+  );
+}
 
 function Admin() {
   const [tab, setTab] = useState<Tab>("Visão geral");
@@ -37,21 +50,19 @@ function Admin() {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-8">
         {tab === "Visão geral" && <Overview />}
-        {tab === "Produtos" && <Products />}
-        {tab === "Estoque" && <Stock />}
-        {tab === "Promoções" && <Promos />}
+        {tab === "Produtos" && <ProductsTab />}
+        {tab === "Estoque" && <StockTab />}
+        {tab === "Promoções" && <PromosTab />}
         {tab === "Pedidos" && <Orders />}
       </main>
     </div>
   );
 }
 
-const box = "rounded-xl bg-card p-5 ring-1 ring-border";
-
 function Overview() {
   const { orders, products } = useStore();
   const revenue = orders.reduce((s, o) => s + o.total, 0);
-  const low = products.filter((p) => p.stock <= 6).length;
+  const low = products.filter((p) => p.stock <= LOW_STOCK).length;
   const max = Math.max(...salesByMonth.map((m) => m.vendas));
   const top = [...products].sort((a, b) => b.sold - a.sold).slice(0, 5);
   return (
@@ -93,90 +104,6 @@ function Overview() {
           </ol>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Products() {
-  const { products, updateProduct, removeProduct } = useStore();
-  return (
-    <div className={`${box} overflow-x-auto p-0`}>
-      <table className="w-full text-sm">
-        <thead className="text-left text-muted-foreground">
-          <tr className="border-b border-border"><th className="p-3">Produto</th><th className="p-3">Categoria</th><th className="p-3">Preço</th><th className="p-3">Ativo</th><th className="p-3">Destaque</th><th className="p-3" /></tr>
-        </thead>
-        <tbody>
-          {products.map((p) => (
-            <tr key={p.id} className="border-b border-border last:border-0">
-              <td className="p-3"><div className="flex items-center gap-3"><img src={p.image} alt="" className="size-10 rounded object-cover" /><span className="text-foreground">{p.name}</span></div></td>
-              <td className="p-3 text-muted-foreground">{categoryName(p.category)}</td>
-              <td className="p-3">
-                <input type="number" step="0.1" defaultValue={p.price} onBlur={(e) => updateProduct(p.id, { price: Number(e.target.value) })} className="w-24 rounded border border-border bg-background px-2 py-1 text-foreground" />
-              </td>
-              <td className="p-3"><input type="checkbox" checked={p.active} onChange={(e) => updateProduct(p.id, { active: e.target.checked })} className="accent-primary" /></td>
-              <td className="p-3"><input type="checkbox" checked={p.featured} onChange={(e) => updateProduct(p.id, { featured: e.target.checked })} className="accent-primary" /></td>
-              <td className="p-3"><button onClick={() => { removeProduct(p.id); toast("Produto removido"); }} className="text-destructive">Remover</button></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function Stock() {
-  const { products, updateProduct } = useStore();
-  const sorted = [...products].sort((a, b) => a.stock - b.stock);
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {sorted.map((p) => (
-        <div key={p.id} className={`${box} flex items-center gap-3 p-3`}>
-          <img src={p.image} alt="" className="size-12 rounded object-cover" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm text-foreground">{p.name}</p>
-            <p className={`text-xs ${p.stock === 0 ? "text-destructive" : p.stock <= 6 ? "text-primary" : "text-muted-foreground"}`}>
-              {p.stock === 0 ? "Esgotado" : p.stock <= 6 ? "Estoque baixo" : "OK"}
-            </p>
-          </div>
-          <div className="flex items-center rounded-md ring-1 ring-border">
-            <button className="px-3 py-1 text-foreground" onClick={() => updateProduct(p.id, { stock: Math.max(0, p.stock - 1) })}>−</button>
-            <span className="w-8 text-center text-sm text-foreground">{p.stock}</span>
-            <button className="px-3 py-1 text-foreground" onClick={() => updateProduct(p.id, { stock: p.stock + 1 })}>+</button>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function Promos() {
-  const { products, updateProduct } = useStore();
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {products.map((p) => {
-        const off = discountPct(p);
-        return (
-          <div key={p.id} className={`${box} flex items-center gap-3 p-3`}>
-            <img src={p.image} alt="" className="size-12 rounded object-cover" />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm text-foreground">{p.name}</p>
-              <p className="text-xs text-muted-foreground">{formatBRL(p.price)} {off > 0 && <span className="text-primary">(-{off}%)</span>}</p>
-            </div>
-            <select
-              value={off}
-              onChange={(e) => {
-                const pct = Number(e.target.value);
-                const base = p.oldPrice ?? p.price;
-                updateProduct(p.id, pct === 0 ? { price: base, oldPrice: undefined } : { oldPrice: base, price: Math.round(base * (1 - pct / 100) * 10) / 10 });
-              }}
-              className="rounded border border-border bg-background px-2 py-1 text-sm text-foreground"
-            >
-              {[0, 10, 15, 20, 25, 30, 40].includes(off) ? null : <option value={off}>-{off}%</option>}
-              {[0, 10, 15, 20, 25, 30, 40].map((v) => <option key={v} value={v}>{v === 0 ? "Sem promoção" : `-${v}%`}</option>)}
-            </select>
-          </div>
-        );
-      })}
     </div>
   );
 }
